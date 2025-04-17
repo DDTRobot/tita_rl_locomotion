@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="display">
+  <xacro:arg name="use_tower" default="false" />
+  <xacro:include filename="$(find tita_description)/diablo_pluspro_stand/xacro/materials.xacro"/>
+  <xacro:include filename="$(find tita_description)/diablo_pluspro_stand/xacro/description.xacro" />
+
+  <xacro:description />
+
+</robot>

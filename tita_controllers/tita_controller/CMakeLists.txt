@@ -11,9 +11,10 @@ ament_auto_find_build_dependencies()
 find_package(CUDA REQUIRED)
 
 include_directories()
-include_directories(/usr/local/cuda/include)
-link_directories(/usr/local/cuda/lib64)
-
+include_directories(/usr/local/cuda-12.1/include)
+include_directories((/usr/src/tensorrt-8.6/include))
+link_directories(/usr/local/cuda-12.1/lib64)
+link_directories(/usr/src/tensorrt-8.6/lib)
 # generate parameter listener hpp file
 generate_parameter_library(tita_controller_parameters
   src/tita_controller_parameters.yaml

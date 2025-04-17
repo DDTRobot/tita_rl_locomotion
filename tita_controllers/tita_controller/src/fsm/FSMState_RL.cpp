@@ -12,30 +12,30 @@
  */
 
 FSMState_RL::FSMState_RL(std::shared_ptr<ControlFSMData> data)
-: FSMState(data, FSMStateName::RL, "rl"),
-  input_0(new float[33]),
-  input_1(new float[330]),
-  output(new float[8]),
-  output_last(new float[8]),
-  input_1_temp(new float[297])
+    : FSMState(data, FSMStateName::RL, "rl"),
+      input_0(new float[33]),
+      input_1(new float[330]),
+      output(new float[8]),
+      output_last(new float[8]),
+      input_1_temp(new float[297])
 {
-  cuda_test_ = std::make_shared<CudaTest>("/home/hxt/Downloads/LocomotionWithNP3O_8dofs_126/tita_rl/model_gn.engine");
+  cuda_test_ = std::make_shared<CudaTest>("/home/hilabldc/tita_rl/logs/stair_tita_constraint/exported/policies/model_gn.engine");
   std::cout << "cuda init :" << cuda_test_->get_cuda_init() << std::endl;
 }
 
 void FSMState_RL::enter()
-{ 
+{
   _data->state_command->firstRun = true;
 
   for (int i = 0; i < 2; i++)
   {
-    wheel_init_pos_abs_[i] = _data->low_state->q[4*i+3];
+    wheel_init_pos_abs_[i] = _data->low_state->q[4 * i + 3];
     desired_pos[4 * i + 3] = 0;
-    desired_pos[4 * i] = _data->low_state->q[4*i];
-    desired_pos[4 * i + 1] = _data->low_state->q[4*i+1];
-    desired_pos[4 * i + 2] = _data->low_state->q[4*i+2];
+    desired_pos[4 * i] = _data->low_state->q[4 * i];
+    desired_pos[4 * i + 1] = _data->low_state->q[4 * i + 1];
+    desired_pos[4 * i + 2] = _data->low_state->q[4 * i + 2];
   }
-  for(int i = 0; i < 4; i++)
+  for (int i = 0; i < 4; i++)
   {
     obs_.dof_pos[i + 4] = _data->low_state->q[i];
     obs_.dof_vel[i + 4] = _data->low_state->dq[i];
@@ -44,6 +44,7 @@ void FSMState_RL::enter()
   }
 
   params_.action_scale = 0.5;
+  params_.hip_scale_reduction = 0.5;
   params_.num_of_dofs = 8;
   params_.lin_vel_scale = 2.0;
   params_.ang_vel_scale = 0.25;
@@ -61,7 +62,7 @@ void FSMState_RL::enter()
   }
 
   x_vel_cmd_ = 0.;
-  pitch_cmd_ = 0.;
+  yaw_vel_cmd_ = 0.;
 
   for (int i = 0; i < 297; i++)
     input_1.get()[i] = 0;
@@ -115,28 +116,27 @@ void FSMState_RL::run()
   // _data->state_command->clear();
   // _data->low_cmd->zero();
   x_vel_cmd_ = _data->state_command->rc_data_->twist_linear[point::X];
-  pitch_cmd_ = _data->state_command->rc_data_->twist_angular[point::Z];
+  yaw_vel_cmd_ = _data->state_command->rc_data_->twist_angular[point::Z];
   // _data->state_command->rc_data_->twist_angular[point::Z]
   _data->low_cmd->qd.setZero();
   _data->low_cmd->qd_dot.setZero();
   _data->low_cmd->kp.setZero();
   _data->low_cmd->kd.setZero();
   _data->low_cmd->tau_cmd.setZero();
-  for(int i = 0; i < 8; i++)
+  for (int i = 0; i < 8; i++)
   {
-    if(i % 4 == 3)
+    if (i % 4 == 3)
     {
-      _data->low_cmd->tau_cmd[i] = 12 * desired_pos[i] + 1.5 * (0 - _data->low_state->dq[i]);
+      _data->low_cmd->tau_cmd[i] = 10 * desired_pos[i] + 0.5 * (0 - _data->low_state->dq[i]);
     }
     else
     {
-      _data->low_cmd->tau_cmd[i] = 60 * (desired_pos[i] - _data->low_state->q[i]) + 2.0 * (0 - _data->low_state->dq[i]);
+      _data->low_cmd->tau_cmd[i] = 40 * (desired_pos[i] - _data->low_state->q[i]) + 1.0 * (0 - _data->low_state->dq[i]);
     }
   }
-
 }
 
-void FSMState_RL::exit() 
+void FSMState_RL::exit()
 {
   stop_update_ = true;
 }
@@ -174,98 +174,100 @@ void FSMState_RL::_GetObs()
   // qwb = state_estimate_->orientation;
   // pwb = state_estimate_->position;
   // vwb = state_estimate_->vWorld;
-    std::vector<float> obs_tmp;
-    // compute gravity
-    Mat3<double> _B2G_RotMat = this->_data->state_estimator->getResult().rBody;
-    Mat3<double> _G2B_RotMat = this->_data->state_estimator->getResult().rBody.transpose();
+  std::vector<float> obs_tmp;
+  // compute gravity
+  Mat3<double> _B2G_RotMat = this->_data->state_estimator->getResult().rBody;
+  Mat3<double> _G2B_RotMat = this->_data->state_estimator->getResult().rBody.transpose();
 
-    Vec3<double> angvel = a_l;
-    a_l = 0.97*this->_data->state_estimator->getResult().omegaBody + 0.03*a_l;
-    Vec3<double> projected_gravity = _B2G_RotMat * Vec3<double>(0.0, 0.0, -1.0);
-    Vec3<double> projected_forward = _G2B_RotMat * Vec3<double>(1.0, 0.0, 0.0);
-    // gravity
-    // _gxFilter->addValue(angvel(0,0));
-    // _gyFilter->addValue(angvel(1,0));
-    // _gzFilter->addValue(angvel(2,0));
-    //
-    obs_tmp.push_back(angvel(0)*0.25);
-    obs_tmp.push_back(angvel(1)*0.25);
-    obs_tmp.push_back(angvel(2)*0.25);
+  Vec3<double> base_ang_vel = a_l;
+  // a_l = 0.97 * this->_data->state_estimator->getResult().omegaBody + 0.03 * a_l;
+  a_l = 1.0 * this->_data->state_estimator->getResult().omegaBody;
+  Vec3<double> projected_gravity = _B2G_RotMat * Vec3<double>(0.0, 0.0, -1.0);
+  Vec3<double> projected_forward = _G2B_RotMat * Vec3<double>(1.0, 0.0, 0.0);
+  // gravity
+  // _gxFilter->addValue(angvel(0,0));
+  // _gyFilter->addValue(angvel(1,0));
+  // _gzFilter->addValue(angvel(2,0));
+  //
+  obs_tmp.push_back(base_ang_vel(0) * params_.ang_vel_scale);
+  obs_tmp.push_back(base_ang_vel(1) * params_.ang_vel_scale);
+  obs_tmp.push_back(base_ang_vel(2) * params_.ang_vel_scale);
 
-    for (int i = 0; i < 3; ++i)
-    {
-        obs_tmp.push_back(projected_gravity(i));
-    }
+  for (int i = 0; i < 3; ++i)
+  {
+    obs_tmp.push_back(projected_gravity(i));
+  }
 
-    // cmd
-    float rx = pitch_cmd_;//rx * (1 - smooth) + (std::fabs(_lowState->userValue.rx) < dead_zone ? 0.0 : _lowState->userValue.rx) * smooth;
-    float ly = x_vel_cmd_;//ly * (1 - smooth) + (std::fabs(_lowState->userValue.ly) < dead_zone ? 0.0 : _lowState->userValue.ly) * smooth;
+  // cmd
+  // float rx = yaw_vel_cmd_; // rx * (1 - smooth) + (std::fabs(_lowState->userValue.rx) < dead_zone ? 0.0 : _lowState->userValue.rx) * smooth;
+  // float ly = x_vel_cmd_;   // ly * (1 - smooth) + (std::fabs(_lowState->userValue.ly) < dead_zone ? 0.0 : _lowState->userValue.ly) * smooth;
 
-    float max = 1.0;
-    float min = -1.0;
+  // float max = 1.0;
+  // float min = -1.0;
 
-    float rot = rx*3.14;
-    float vel = ly*2;
+  // float rot = rx * 3.14;
+  // float vel = ly * 2;
 
-    double heading = 0.;
-    double angle = (double)rot - heading;
-    angle = fmod(angle,2.0*M_PI);
-    if(angle > M_PI)
-    {
-        angle = angle - 2.0*M_PI;
-    }
-    angle = angle*0.5;
-    angle = std::max(std::min((float)angle, max), min);
-    angle = angle * 0.25;
+  // double heading = 0.;
+  // double angle = (double)rot - heading;
+  // angle = fmod(angle, 2.0 * M_PI);
+  // if (angle > M_PI)
+  // {
+  //   angle = angle - 2.0 * M_PI;
+  // }
+  // angle = angle * 0.5;
+  // angle = std::max(std::min((float)angle, max), min);
+  // angle = angle * 0.25;
+  float command_x = x_vel_cmd_ * params_.lin_vel_scale;
+  float command_yaw = yaw_vel_cmd_ * params_.ang_vel_scale;
 
+  obs_tmp.push_back(command_x);
+  obs_tmp.push_back(0.0);
+  obs_tmp.push_back(command_yaw);
+  std::cout << "angle: " << command_yaw << " ang_vel_now " << base_ang_vel(2) << std::endl;
+
+  // pos
+  for (int i = 0; i < 8; ++i)
+  {
+    float pos = (this->obs_.dof_pos[i] - this->params_.default_dof_pos[i]) * params_.dof_pos_scale;
+    obs_tmp.push_back(pos);
+  }
+  // vel
+  for (int i = 0; i < 8; ++i)
+  {
+    float vel = this->obs_.dof_vel[i] * params_.dof_vel_scale;
     obs_tmp.push_back(vel);
-    obs_tmp.push_back(0.0);
-    obs_tmp.push_back(angle);
+  }
 
-    // pos
-    for (int i = 0; i < 8; ++i)
-    {
-        float pos = (this->obs_.dof_pos[i]  - this->params_.default_dof_pos[i]) * params_.dof_pos_scale;
-        obs_tmp.push_back(pos);
-    }
-    // vel
-    for (int i = 0; i < 8; ++i)
-    {
-        float vel = this->obs_.dof_vel[i] * params_.dof_vel_scale;
-        obs_tmp.push_back(vel);
-    }
+  // last action
+  // float index[12] = {3,4,5,0,1,2,9,10,11,6,7,8};
+  for (int i = 0; i < 8; ++i)
+  {
+    obs_tmp.push_back(output_last.get()[i]);
+  }
 
-    // last action
-    //float index[12] = {3,4,5,0,1,2,9,10,11,6,7,8};
-    for (int i = 0; i < 8; ++i)
-    {
-        obs_tmp.push_back(output_last.get()[i]);
-    }
-
-    for(int i = 0; i < 33; i++)
-    {
-        input_0.get()[i] = obs_tmp[i];
-    }
-
+  for (int i = 0; i < 33; i++)
+  {
+    input_0.get()[i] = obs_tmp[i];
+  }
 }
 
 void FSMState_RL::_Forward()
 {
-    _GetObs();
-    cuda_test_->do_inference(input_0.get(), input_1.get(), output.get());
+  _GetObs();
+  cuda_test_->do_inference(input_0.get(), input_1.get(), output.get());
 
-    for (int i = 0; i < 297; i++)
-        input_1_temp.get()[i] = input_1.get()[i + 33];
+  for (int i = 0; i < 297; i++)
+    input_1_temp.get()[i] = input_1.get()[i + 33];
 
-    for (int i = 0; i < 297; i++)
-        input_1.get()[i] = input_1_temp.get()[i];
+  for (int i = 0; i < 297; i++)
+    input_1.get()[i] = input_1_temp.get()[i];
 
-    for (int i = 0; i < 33; i++)
-        input_1.get()[i + 297] = input_0.get()[i];
+  for (int i = 0; i < 33; i++)
+    input_1.get()[i + 297] = input_0.get()[i];
 
-    for (int i = 0; i < 8; i++)
-        output_last.get()[i] = output.get()[i];
-
+  for (int i = 0; i < 8; i++)
+    output_last.get()[i] = output.get()[i];
 }
 
 void FSMState_RL::_Run_Forward()
@@ -292,13 +294,15 @@ void FSMState_RL::_Run_Forward()
       {
         action[j] = output.get()[j] * params_.action_scale + params_.default_dof_pos[j];
       }
+      action[0] *= params_.hip_scale_reduction;
+      action[3] *= params_.hip_scale_reduction;
 
       for (int i = 0; i < 4; i++)
       {
-        desired_pos[i+4] = action[i];
-        desired_pos[i] = action[i+4];
-        // std::cerr << "desired_pos" << i << ":" << desired_pos[i] << std::endl;
+        desired_pos[i + 4] = action[i];
+        desired_pos[i] = action[i + 4];
       }
+      // std::cerr << "des_pos1 " << desired_pos[1] << " des_pos2 " << desired_pos[2] << " des_pos5 " << desired_pos[5] << " des_pos6 " << desired_pos[6] << std::endl;
     }
 
     absoluteWait(_start_time, (long long)(0.01 * 1000000));

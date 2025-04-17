@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro" name="tita">
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="diablo_pluspro">
   <xacro:arg name="prefix" default="" />
   <xacro:arg name="use_tower" default="false" />
   
@@ -7,10 +7,9 @@
   <xacro:property name="ctrl_mode" value="$(arg ctrl_mode)" />
   <xacro:arg name="yaml_path" default="" />
 
-  <xacro:include filename="$(find tita_description)/tita/xacro/materials.xacro" />
-  <xacro:include filename="$(find tita_description)/tita/xacro/description.xacro" />
-  <xacro:include filename="$(find tita_description)/tita/xacro/ros2control.xacro" />
-  <xacro:include filename="$(find tita_description)/tita/xacro/gazebo.xacro" />
+  <xacro:include filename="$(find tita_description)/diablo_pluspro_stand/xacro/materials.xacro" />
+  <xacro:include filename="$(find tita_description)/diablo_pluspro_stand/xacro/description.xacro" />
+  <xacro:include filename="$(find tita_description)/diablo_pluspro_stand/xacro/ros2control.xacro" />
 
   <xacro:if value="$(arg use_tower)">
     <xacro:include filename="$(find tita_description)/tower/xacro/tower.urdf.xacro" />

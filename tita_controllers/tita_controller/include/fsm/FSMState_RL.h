@@ -10,35 +10,35 @@
 
 struct ModelParams
 {
-    float damping;
-    float stiffness;
-    float action_scale;
-    float hip_scale_reduction;
-    float num_of_dofs;
-    float lin_vel_scale;
-    float ang_vel_scale;
-    float dof_pos_scale;
-    float dof_vel_scale;
-    float clip_obs;
-    float clip_actions;
-    float torque_limits[8];
-    float d_gains[8];
-    float p_gains[8];
-    float commands_scale[3];
-    float default_dof_pos[8];
+  float damping;
+  float stiffness;
+  float action_scale;
+  float hip_scale_reduction;
+  float num_of_dofs;
+  float lin_vel_scale;
+  float ang_vel_scale;
+  float dof_pos_scale;
+  float dof_vel_scale;
+  float clip_obs;
+  float clip_actions;
+  float torque_limits[8];
+  float d_gains[8];
+  float p_gains[8];
+  float commands_scale[3];
+  float default_dof_pos[8];
 };
 
 struct Observations
 {
-    float lin_vel[3];           
-    float ang_vel[3];  
-    float gravity_vec[3];
-    float forward_vec[3];       
-    float commands[3];        
-    float base_quat[4];   
-    float dof_pos[8];           
-    float dof_vel[8];           
-    float actions[8];
+  float lin_vel[3];
+  float ang_vel[3];
+  float gravity_vec[3];
+  float forward_vec[3];
+  float commands[3];
+  float base_quat[4];
+  float dof_pos[8];
+  float dof_vel[8];
+  float actions[8];
 };
 
 class FSMState_RL : public FSMState
@@ -68,7 +68,8 @@ private:
   // Keep track of the control iterations
   float wheel_init_pos_abs_[4];
   float x_vel_cmd_;
-  float pitch_cmd_;
+  float yaw_vel_cmd_;
+
 private:
   ModelParams params_;
   Observations obs_;
@@ -101,7 +102,6 @@ private:
 
   bool stop_update_ = false;
   bool thread_first_ = true;
-  
 };
 
-#endif  // FSMSTATE_RL_H
+#endif // FSMSTATE_RL_H

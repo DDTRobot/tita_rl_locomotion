@@ -36,3 +36,10 @@ ros2 launch tita_description tita_display.launch.py
 # display airbot with rviz
 ros2 launch tita_description airbot_play_display.launch.py
 ```
+
+### some help:
+```
+ros2 run tf2_tools view_frames #查看tf树，会生成frams.pdf，打开该文件查看TF树
+ros2 node list | grep tf #用以下命令查看正在运行的TF发布节点
+```
+注意urdf和xacro里的joint_limit要写完整，不然rviz显示会有问题（报错：No transform from [left_wheel_link] to [base_link]，例如这种）

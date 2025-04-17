@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 from launch import LaunchDescription, LaunchContext
 from ament_index_python.packages import get_package_share_directory
@@ -28,6 +29,7 @@ def generate_launch_description():
     # Declare an argument to control inclusion of the extra launch file
     declared_arguments = []
 
+    # Declare the simulation environment argument (webots or gazebo)
     declared_arguments.append(
         DeclareLaunchArgument(
             "sim_env",
@@ -36,6 +38,8 @@ def generate_launch_description():
             choices=["webots", "gazebo"],
         )
     )
+
+    # Declare the control mode argument (wbc, sdk, or mcu)
     declared_arguments.append(
         DeclareLaunchArgument(
             "ctrl_mode",
@@ -47,7 +51,8 @@ def generate_launch_description():
 
     urdf = "robot.xacro"
     yaml_path = "locomotion_bringup"
-    # launch webots bridge
+
+    # Include the Webots controller manager launch file if sim_env is webots
     webots_controller_manager_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -66,12 +71,13 @@ def generate_launch_description():
         ),
     )
 
+    # Include the Gazebo controller manager launch file if sim_env is gazebo
     gazebo_controller_manager_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("gazebo_bridge"),
                 "launch",
-                "gazebo_bridge.launch.py",
+                "gazebo_bridge2.launch.py",
             )
         ),
         launch_arguments={
@@ -83,8 +89,8 @@ def generate_launch_description():
             PythonExpression(["'", LaunchConfiguration("sim_env"), "' == 'gazebo'"])
         ),
     )
-    # add extra controllers launch or node
 
+    # Include the robot inertia calculator launch file #tofix
     robot_inertia_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -95,6 +101,7 @@ def generate_launch_description():
         ),
     )
 
+    # Node to spawn the joint state broadcaster
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -105,6 +112,7 @@ def generate_launch_description():
         ],
     )
 
+    # Node to spawn the IMU sensor broadcaster
     imu_sensor_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -115,6 +123,7 @@ def generate_launch_description():
         ],
     )
 
+    # Node to spawn the WBC controller
     wbc_controller = Node(
         package="controller_manager",
         # output='screen',
@@ -127,6 +136,7 @@ def generate_launch_description():
         # condition=IfCondition(PythonExpression(["'", LaunchConfiguration('ctrl_mode'), "' == 'wbc'"]))
     )
 
+    # Return the launch description with all declared arguments and included nodes
     return LaunchDescription(
         declared_arguments
         + [

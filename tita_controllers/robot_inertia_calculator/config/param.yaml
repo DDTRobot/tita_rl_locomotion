@@ -32,6 +32,7 @@
             w: 1.0
       
       tita_urdf_path: /usr/share/robot_description/tita/urdf/robot.urdf
+      diablo_pluspro_urdf_path: /usr/share/robot_description/diablo_pluspro_stand/urdf/robot.urdf
     
 
       
