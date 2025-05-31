@@ -616,6 +616,8 @@ void TitaController::update_control_parameters()
   get_node()->get_parameter<std::vector<scalar_t>>("joint_pd.p", param->joint_kp);
   get_node()->get_parameter<std::vector<scalar_t>>("joint_pd.d", param->joint_kd);
 
+  get_node()->get_parameter<std::vector<scalar_t>>("rl_joint_pd.p", param->rl_joint_kp);   //pd parameters for rl
+  get_node()->get_parameter<std::vector<scalar_t>>("rl_joint_pd.d", param->rl_joint_kd);
   // get_node()->get_parameter<std::vector<scalar_t>>("wbc_joint_pd.p", param->wbc_joint_kp);
   // get_node()->get_parameter<std::vector<scalar_t>>("wbc_joint_pd.d", param->wbc_joint_kd);
   
