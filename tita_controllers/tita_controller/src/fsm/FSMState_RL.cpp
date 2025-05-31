@@ -124,13 +124,14 @@ void FSMState_RL::run()
   _data->low_cmd->tau_cmd.setZero();
   for(int i = 0; i < 8; i++)
   {
+    //The parameter can be changed through the YAML file. (tita_controller_parameters.yaml)
     if(i % 4 == 3)
     {
-      _data->low_cmd->tau_cmd[i] = 12 * desired_pos[i] + 1.5 * (0 - _data->low_state->dq[i]);
+      _data->low_cmd->tau_cmd[i] = _data->params->joint_kp[i] * desired_pos[i] + _data->params->joint_kd[i]* (0 - _data->low_state->dq[i]);
     }
     else
     {
-      _data->low_cmd->tau_cmd[i] = 60 * (desired_pos[i] - _data->low_state->q[i]) + 2.0 * (0 - _data->low_state->dq[i]);
+      _data->low_cmd->tau_cmd[i] =  _data->params->joint_kp[i]  * (desired_pos[i] - _data->low_state->q[i]) + _data->params->joint_kd[i] * (0 - _data->low_state->dq[i]);
     }
   }
 
