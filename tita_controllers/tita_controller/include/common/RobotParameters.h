@@ -19,6 +19,8 @@ struct RobotControlParameters
     torque_limit = {80.0, 20.0, 40.0, 5.0, 80.0, 20.0, 40.0, 5.0};
     joint_kp = {600.0, 80.0, 80.0, 5.0, 600.0, 80.0, 80.0, 5.0};
     joint_kd = {8.0, 8.0, 8.0, 0.2, 8.0, 8.0, 8.0, 0.2};
+    rl_joint_kp = {600.0, 80.0, 80.0, 5.0, 600.0, 80.0, 80.0, 5.0};  //rl mode parameters
+    rl_joint_kd = {8.0, 8.0, 8.0, 0.2, 8.0, 8.0, 8.0, 0.2};
     wheel_joint_name = {"joint_left_leg_4", "joint_right_leg_4"};
     
   }
@@ -35,6 +37,7 @@ struct RobotControlParameters
   int update_rate{500};  // control loop update rate
   std::vector<scalar_t> torque_limit;
   std::vector<scalar_t> joint_kp, joint_kd;
+  std::vector<scalar_t> rl_joint_kp, rl_joint_kd;  //pd parameters for rl
   std::vector<scalar_t> wbc_joint_kp, wbc_joint_kd;
 
   scalar_t sum_y_kp{200}, sum_y_kd{10};
