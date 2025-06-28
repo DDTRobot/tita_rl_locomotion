@@ -22,12 +22,14 @@
 #define CYAN "\033[36m"
 
 #define STEP_ACCL_X 0.1
+#define STEP_ACCL_Y 0.1
 #define STEP_ACCL_W 0.1
 #define STEP_ORIENTATION 0.01
 #define STEP_POSITION 0.01
 #define STEP_HEIGHT 0.1
 
 #define MAX_VEL_X 1.0
+#define MAX_VEL_Y 1.0
 #define MAX_VEL_W 1.0
 #define MAX_ORIENTATION 0.2
 #define MAX_POSITION 0.1

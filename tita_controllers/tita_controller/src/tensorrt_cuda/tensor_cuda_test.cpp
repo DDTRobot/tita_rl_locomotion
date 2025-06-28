@@ -13,7 +13,13 @@ nvinfer1::ICudaEngine * CudaTest::get_engine(const std::string & engine_file_pat
   nvinfer1::IRuntime * runtime = nvinfer1::createInferRuntime(gLogger);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#if NV_TENSORRT_MAJOR >= 10
+  return runtime->deserializeCudaEngine(engine_data.data(), engine_data.size());
+#else
   return runtime->deserializeCudaEngine(engine_data.data(), engine_data.size(), nullptr);
+#endif
+
 #pragma GCC diagnostic pop
 }
 
@@ -33,8 +39,18 @@ void CudaTest::do_inference(
 // context->enqueue(1, (void**)buffers, stream, nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if NV_TENSORRT_MAJOR >= 10
+  // set tensor address for tensorrt 10x
+  // check in https://netron.app/
+  context->setTensorAddress("onnx::Unsqueeze_0",buffers[0]);
+  context->setTensorAddress("onnx::Slice_1",buffers[1]);
+  context->setTensorAddress("71",buffers[2]);
+  context->enqueueV3(stream);
+#else
   context->enqueueV2(reinterpret_cast<void **>(buffers), stream, nullptr);
+#endif
 #pragma GCC diagnostic pop
+
   cudaMemcpyAsync(output, buffers[2], output_size, cudaMemcpyDeviceToHost, stream);
   cudaStreamSynchronize(stream);
 }

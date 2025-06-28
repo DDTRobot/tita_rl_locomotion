@@ -19,7 +19,7 @@ FSMState_RL::FSMState_RL(std::shared_ptr<ControlFSMData> data)
   output_last(new float[8]),
   input_1_temp(new float[297])
 {
-  cuda_test_ = std::make_shared<CudaTest>("/home/hxt/Downloads/LocomotionWithNP3O_8dofs_126/tita_rl/model_gn.engine");
+  cuda_test_ = std::make_shared<CudaTest>("/your/path/to/xx.engine");
   std::cout << "cuda init :" << cuda_test_->get_cuda_init() << std::endl;
 }
 
@@ -61,6 +61,7 @@ void FSMState_RL::enter()
   }
 
   x_vel_cmd_ = 0.;
+  y_vel_cmd_ = 0.;
   pitch_cmd_ = 0.;
 
   for (int i = 0; i < 297; i++)
@@ -115,6 +116,7 @@ void FSMState_RL::run()
   // _data->state_command->clear();
   // _data->low_cmd->zero();
   x_vel_cmd_ = _data->state_command->rc_data_->twist_linear[point::X];
+  y_vel_cmd_ = _data->state_command->rc_data_->twist_linear[point::Y];
   pitch_cmd_ = _data->state_command->rc_data_->twist_angular[point::Z];
   // _data->state_command->rc_data_->twist_angular[point::Z]
   _data->low_cmd->qd.setZero();
@@ -199,13 +201,14 @@ void FSMState_RL::_GetObs()
 
     // cmd
     float rx = pitch_cmd_;//rx * (1 - smooth) + (std::fabs(_lowState->userValue.rx) < dead_zone ? 0.0 : _lowState->userValue.rx) * smooth;
-    float ly = x_vel_cmd_;//ly * (1 - smooth) + (std::fabs(_lowState->userValue.ly) < dead_zone ? 0.0 : _lowState->userValue.ly) * smooth;
-
+    float lx = x_vel_cmd_;
+    float ly = y_vel_cmd_;
     float max = 1.0;
     float min = -1.0;
 
     float rot = rx*3.14;
-    float vel = ly*2;
+    float vel_x = lx*2;
+    float vel_y = ly*2;
 
     double heading = 0.;
     double angle = (double)rot - heading;
@@ -217,9 +220,8 @@ void FSMState_RL::_GetObs()
     angle = angle*0.5;
     angle = std::max(std::min((float)angle, max), min);
     angle = angle * 0.25;
-
-    obs_tmp.push_back(vel);
-    obs_tmp.push_back(0.0);
+    obs_tmp.push_back(vel_x);
+    obs_tmp.push_back(vel_y);
     obs_tmp.push_back(angle);
 
     // pos
@@ -290,7 +292,11 @@ void FSMState_RL::_Run_Forward()
 
       for (int j = 0; j < 8; j++)
       {
-        action[j] = output.get()[j] * params_.action_scale + params_.default_dof_pos[j];
+        if(j%4==0){
+          action[j] = output.get()[j] * params_.action_scale*0.5 + params_.default_dof_pos[j];
+        }
+        else
+          action[j] = output.get()[j] * params_.action_scale + params_.default_dof_pos[j];
       }
 
       for (int i = 0; i < 4; i++)

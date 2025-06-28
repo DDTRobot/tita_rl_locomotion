@@ -55,14 +55,15 @@ void KeyboardControllerNode::print_interface()
             << "  pose scale:" << std::setw(6) << RED << pose_scale_ << RESET << std::endl
             << std::endl;
   std::cout << "  x vel:" << std::setw(6) << MAGENTA << twist_.linear.x << RESET
+            << "  y vel:" << std::setw(6) << MAGENTA << twist_.linear.y << RESET
             << "  z vel:" << std::setw(6) << MAGENTA << twist_.angular.z << RESET << std::endl;
 
-  std::cout << "  pitch:" << std::setw(6) << CYAN << rpy_[0] << RESET << "   roll:" << std::setw(6)
-            << CYAN << rpy_[1] << RESET << "   yaw: " << std::setw(6) << CYAN << rpy_[2] << RESET
-            << std::endl;
+  // std::cout << "  pitch:" << std::setw(6) << CYAN << rpy_[0] << RESET << "   roll:" << std::setw(6)
+  //           << CYAN << rpy_[1] << RESET << "   yaw: " << std::setw(6) << CYAN << rpy_[2] << RESET
+  //           << std::endl;
 
-  std::cout << "  y:    " << std::setw(6) << YELLOW << pose_.pose.position.y << RESET
-            << "   z:   " << std::setw(6) << YELLOW << pose_.pose.position.z << RESET << std::endl;
+  // std::cout << "  y:    " << std::setw(6) << YELLOW << pose_.pose.position.y << RESET
+  //           << "   z:   " << std::setw(6) << YELLOW << pose_.pose.position.z << RESET << std::endl;
 }
 
 int KeyboardControllerNode::get_key()
@@ -119,6 +120,7 @@ void KeyboardControllerNode::ReadKeyThread()
         break;
       case 's':
         twist_.linear.x = 0.0;
+        twist_.linear.y = 0.0;
         twist_.angular.z = 0.0;
         break;
       case '+':
@@ -143,10 +145,10 @@ void KeyboardControllerNode::ReadKeyThread()
               pose_.pose.position.z -= STEP_HEIGHT * pose_scale_;
               break;
             case 'C':  // Right
-              pose_.pose.position.y -= STEP_POSITION * pose_scale_;
+              twist_.linear.y -= STEP_ACCL_Y * speed_scale_;
               break;
             case 'D':  // Left
-              pose_.pose.position.y += STEP_POSITION * pose_scale_;
+              twist_.linear.y += STEP_ACCL_Y * speed_scale_;
               break;
             default:
               break;
@@ -185,6 +187,7 @@ void KeyboardControllerNode::ReadKeyThread()
     speed_scale_ = clamp(speed_scale_, 0.1, 4.0);
     pose_scale_ = clamp(pose_scale_, 0.1, 4.0);
     twist_.linear.x = clamp(twist_.linear.x, -MAX_VEL_X, MAX_VEL_X);
+    twist_.linear.y = clamp(twist_.linear.y, -MAX_VEL_Y, MAX_VEL_Y);
     twist_.angular.z = clamp(twist_.angular.z, -MAX_VEL_W, MAX_VEL_W);
     for (size_t i = 0; i < 3; i++) {
       rpy_[i] = clamp(rpy_[i], -MAX_ORIENTATION, MAX_ORIENTATION);

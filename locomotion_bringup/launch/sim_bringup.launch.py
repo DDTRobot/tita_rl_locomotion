@@ -76,12 +76,12 @@ def generate_launch_description():
     # )
     # add extra controllers launch or node
 
-    robot_inertia_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('robot_inertia_calculator'),
-            'launch',
-            'robot_inertia_calculator.launch.py'
-        )),
-    )
+    # robot_inertia_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(os.path.join(
+    #         get_package_share_directory('robot_inertia_calculator'),
+    #         'launch',
+    #         'robot_inertia_calculator.launch.py'
+    #     )),
+    # )
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -109,7 +109,7 @@ def generate_launch_description():
 
         joint_state_broadcaster_spawner,
         imu_sensor_broadcaster_spawner,
-        wbc_controller,
+        wbc_controller
         
-        robot_inertia_launch,
+        # robot_inertia_launch,
     ])

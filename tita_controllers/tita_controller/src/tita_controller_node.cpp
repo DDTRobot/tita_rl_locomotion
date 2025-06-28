@@ -337,6 +337,7 @@ void TitaController::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg)
   std::lock_guard<std::mutex> lock(cmd_vel_mutex_);
   auto cmd = controlData_->state_command->rc_data_;
   cmd->twist_linear[point::X] = msg->linear.x;
+  cmd->twist_linear[point::Y] = msg->linear.y;
   cmd->twist_angular[point::Z] = msg->angular.z;
 }
 
@@ -388,6 +389,7 @@ void TitaController::plan_commands_cb()
 
   msg.twist_linear.x = controlData_->state_command->desire_data_->twist_linear(point::X);
   msg.twist_linear_int.x = controlData_->state_command->desire_data_->twist_linear_int(point::X);
+  msg.twist_linear.y = controlData_->state_command->desire_data_->twist_linear(point::Y);  
   msg.twist_angular.z = controlData_->state_command->desire_data_->twist_angular(point::Z);
   msg.twist_angular_int.z = controlData_->state_command->desire_data_->twist_angular_int(point::Z);
 

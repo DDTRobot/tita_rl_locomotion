@@ -68,6 +68,7 @@ private:
   // Keep track of the control iterations
   float wheel_init_pos_abs_[4];
   float x_vel_cmd_;
+  float y_vel_cmd_;
   float pitch_cmd_;
 private:
   ModelParams params_;
